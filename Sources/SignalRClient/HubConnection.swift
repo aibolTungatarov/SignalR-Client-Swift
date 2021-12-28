@@ -91,7 +91,7 @@ public class HubConnection {
                 self.logger.log(logLevel: .error, message: "Sending handshake request failed: \(e)")
                 // TODO: (BUG) if this fails when reconnecting the callback should not be called and there
                 // will be no further reconnect attempts
-                self.delegate?.connectionDidFailToOpen(error: e)
+                self.delegate?.connectionDidFailToOpen(error: e, hubConnection: self)
             }
         }
     }
@@ -327,11 +327,11 @@ public class HubConnection {
                 // TODO: (BUG) if this fails when reconnecting the callback should not be called and there
                 // will be no further reconnect attempts
                 logger.log(logLevel: .error, message: "Parsing handshake response failed: \(e)")
-                delegate?.connectionDidFailToOpen(error: e)
+                delegate?.connectionDidFailToOpen(error: e, hubConnection: self)
                 return
             }
             if originalHandshakeStatus.isReconnect {
-                delegate?.connectionDidReconnect()
+                delegate?.connectionDidReconnect(hubConnection: self)
             } else {
                 delegate?.connectionDidOpen(hubConnection: self)
             }
@@ -432,16 +432,16 @@ public class HubConnection {
             }
         }
         handshakeStatus = .needsHandling(false)
-        delegate?.connectionDidClose(error: error)
+        delegate?.connectionDidClose(error: error, hubConnection: self)
     }
 
     fileprivate func connectionDidFailToOpen(error: Error) {
-        delegate?.connectionDidFailToOpen(error: error)
+        delegate?.connectionDidFailToOpen(error: error, hubConnection: self)
     }
 
     fileprivate func connectionWillReconnect(error: Error) {
         handshakeStatus = .needsHandling(true)
-        delegate?.connectionWillReconnect(error: error)
+        delegate?.connectionWillReconnect(error: error, hubConnection: self)
     }
 
     fileprivate func connectionDidReconnect() {
@@ -548,7 +548,7 @@ fileprivate class HubConnectionConnectionDelegate: ConnectionDelegate {
  A helper class used for retrieving arguments of invocations of client side method.
  */
 public class ArgumentExtractor {
-    let clientInvocationMessage: ClientInvocationMessage
+    public let clientInvocationMessage: ClientInvocationMessage
 
     /**
      Initializes an `ArgumentExtractor` with the received `ClientInvocationMessage`.

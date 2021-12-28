@@ -80,7 +80,18 @@ public class ServerInvocationMessage: HubMessage, Encodable {
 public class ClientInvocationMessage: HubMessage, Decodable {
     public let type = MessageType.Invocation
     public let target: String
+    public let messageData: Array<Any>?
     private var arguments: UnkeyedDecodingContainer?
+    
+    public init(_ messageData: Array<Any>) {
+        self.messageData = messageData
+        
+        if messageData.count >= 4 {
+            target = (messageData[3] as? String) ?? ""
+        } else {
+            target = ""
+        }
+    }
 
     public required init (from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -88,6 +99,7 @@ public class ClientInvocationMessage: HubMessage, Decodable {
         if container.contains(.arguments) {
             arguments = try container.nestedUnkeyedContainer(forKey: .arguments)
         }
+        messageData = nil
     }
 
     public func getArgument<T: Decodable>(type: T.Type) throws -> T {
@@ -267,14 +279,14 @@ public class PingMessage : HubMessage, Encodable {
     public let type = MessageType.Ping
     private init() { }
 
-    static let instance = PingMessage()
+    public static let instance = PingMessage()
 }
 
 public class CloseMessage: HubMessage, Decodable {
     public private(set) var type = MessageType.Close
     public let error: String?
 
-    init(error: String?) {
+    public init(error: String?) {
         self.error = error
     }
 }
